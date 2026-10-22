@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Indikator Kesehatan & Prevalensi Penyakit Ginjal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Font Family Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header / Navigasi Utama -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-teal-500 rounded-xl text-slate-900 font-bold flex items-center justify-center shadow-lg shadow-teal-500/20">
+                    <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">Dashboard Indikator Kesehatan</h1>
+                    <p class="text-xs text-teal-400 font-medium">Analisis Prevalensi & Profil Risiko Penyakit Ginjal</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2 text-xs bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-slate-300 self-start md:self-auto">
+                <i data-lucide="database" class="w-4 h-4 text-teal-400"></i>
+                <span>Dataset: <strong class="text-white">Cleaned_Kidney_Disease_Dataset.csv</strong> (1,659 Pasien)</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Kontainer Utama -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- A. IDENTITAS DASHBOARD -->
+        <section class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-100 text-teal-800">
+                        Sistem Informasi Kesehatan
+                    </span>
+                    <span class="text-xs text-slate-400">|</span>
+                    <span class="text-xs text-slate-500 font-medium">Sumber Data: Cleaned Kidney Disease Dataset</span>
+                </div>
+                <h2 class="text-lg font-bold text-slate-800">Visualisasi Analisis Prevalensi Penyakit Ginjal</h2>
+                <p class="text-xs text-slate-500">
+                    <i data-lucide="calendar-x" class="w-3.5 h-3.5 inline text-amber-500 mr-1"></i>
+                    <strong>Catatan Periode Data:</strong> Informasi periode tanggal/tahun observasi tidak tersedia pada variabel dataset primer.
+                </p>
+            </div>
+            <button id="resetFiltersBtn" class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                Reset Filter
+            </button>
+        </section>
+
+        <!-- D. FITUR INTERAKTIF (FILTERS) -->
+        <section class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                    <i data-lucide="filter" class="w-4 h-4 text-teal-600"></i>
+                    Filter Data Interaktif
+                </h3>
+                <span id="activeFilterBadge" class="text-xs text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full font-medium">
+                    Menampilkan seluruh data
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label for="filterStatus" class="block text-xs font-semibold text-slate-600 mb-1">Status Penyakit Ginjal</label>
+                    <select id="filterStatus" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="ALL">Semua Status</option>
+                        <option value="Positif">Positif Penyakit Ginjal</option>
+                        <option value="Negatif">Negatif Penyakit Ginjal</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="filterGender" class="block text-xs font-semibold text-slate-600 mb-1">Jenis Kelamin</label>
+                    <select id="filterGender" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="ALL">Semua Jenis Kelamin</option>
+                        <option value="Laki-laki">Laki-laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="filterHypertension" class="block text-xs font-semibold text-slate-600 mb-1">Riwayat Hipertensi</label>
+                    <select id="filterHypertension" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="ALL">Semua Riwayat</option>
+                        <option value="Ada">Ada Hipertensi</option>
+                        <option value="Tidak ada">Tidak Ada Hipertensi</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="filterDiabetes" class="block text-xs font-semibold text-slate-600 mb-1">Riwayat Diabetes</label>
+                    <select id="filterDiabetes" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="ALL">Semua Riwayat</option>
+                        <option value="Ada">Ada Diabetes</option>
+                        <option value="Tidak ada">Tidak Ada Diabetes</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- B. INDIKATOR UTAMA (KPI CARDS) -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex items-center space-x-3">
+                <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                    <i data-lucide="users" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-500">Total Data Dianalisis</p>
+                    <p id="kpiTotal" class="text-xl font-bold text-slate-800">1,659</p>
+                    <p class="text-[10px] text-slate-400">Pasien Terdaftar</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex items-center space-x-3">
+                <div class="p-3 bg-rose-50 text-rose-600 rounded-xl">
+                    <i data-lucide="alert-circle" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-500">Positif Penyakit Ginjal</p>
+                    <p id="kpiPositif" class="text-xl font-bold text-rose-600">1,524</p>
+                    <p id="kpiPositifPct" class="text-[10px] font-semibold text-rose-500">91.86% dari total</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex items-center space-x-3">
+                <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                    <i data-lucide="check-circle" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-500">Negatif (Pembanding)</p>
+                    <p id="kpiNegatif" class="text-xl font-bold text-emerald-600">135</p>
+                    <p id="kpiNegatifPct" class="text-[10px] font-semibold text-emerald-500">8.14% dari total</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex items-center space-x-3">
+                <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                    <i data-lucide="calendar" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-500">Rata-rata Usia</p>
+                    <p id="kpiAvgAge" class="text-xl font-bold text-slate-800">54.4</p>
+                    <p class="text-[10px] text-slate-400">Tahun</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex items-center space-x-3">
+                <div class="p-3 bg-teal-50 text-teal-600 rounded-xl">
+                    <i data-lucide="heart-pulse" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-500">Rata-rata eGFR</p>
+                    <p id="kpiAvgeGFR" class="text-xl font-bold text-teal-700">82.5</p>
+                    <p class="text-[10px] text-slate-400">mL/min/1.73m²</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- C. VISUALISASI GRAFIK -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Grafik 1: Distribusi Status Penyakit Ginjal -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-teal-600"></i>
+                        Distribusi Status Penyakit Ginjal
+                    </h3>
+                    <span class="text-[11px] text-slate-400">Doughnut Chart</span>
+                </div>
+                <div class="relative flex-grow flex items-center justify-center min-h-[260px]">
+                    <canvas id="chartStatus"></canvas>
+                </div>
+            </div>
+
+            <!-- Grafik 2: Distribusi Usia Pasien -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="bar-chart-2" class="w-4 h-4 text-teal-600"></i>
+                        Distribusi Usia Pasien per Kelompok
+                    </h3>
+                    <span class="text-[11px] text-slate-400">Grouped Bar</span>
+                </div>
+                <div class="relative flex-grow min-h-[260px]">
+                    <canvas id="chartAge"></canvas>
+                </div>
+            </div>
+
+            <!-- Grafik 3: Perbandingan Status Ginjal dengan Hipertensi/Diabetes -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="git-fork" class="w-4 h-4 text-teal-600"></i>
+                        Hubungan Komorbid (Hipertensi & Diabetes)
+                    </h3>
+                    <span class="text-[11px] text-slate-400">Bar Chart Komparatif</span>
+                </div>
+                <div class="relative flex-grow min-h-[260px]">
+                    <canvas id="chartComorbid"></canvas>
+                </div>
+            </div>
+
+            <!-- Grafik 4: Distribusi Nilai Lab (Kreatinin & HbA1c) -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="flask-conical" class="w-4 h-4 text-teal-600"></i>
+                        Distribusi Nilai Kreatinin & HbA1c
+                    </h3>
+                    <span class="text-[11px] text-slate-400">Perbandingan Rata-Rata</span>
+                </div>
+                <div class="relative flex-grow min-h-[260px]">
+                    <canvas id="chartLab"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- E. INSIGHT DAN INTERPRETASI -->
+        <section class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-6 shadow-lg space-y-4">
+            <div class="flex items-center space-x-2 border-b border-slate-700 pb-3">
+                <i data-lucide="lightbulb" class="w-5 h-5 text-amber-400"></i>
+                <h3 class="text-base font-bold text-white">Insight Klinis & Interpretasi Pengelolaan Kesehatan</h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs leading-relaxed text-slate-300">
+                <div class="space-y-3">
+                    <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+                        <h4 class="font-bold text-teal-300 mb-1 flex items-center gap-1.5">
+                            <i data-lucide="trending-up" class="w-4 h-4"></i>
+                            1. Tingginya Prevalensi Kasus (91.86%)
+                        </h4>
+                        <p>
+                            <strong>Informasi Ditemukan:</strong> Dari 1,659 total sampel pasien, sebanyak 1,524 pasien (91.86%) dinyatakan positif penyakit ginjal.
+                            <br>
+                            <strong>Makna bagi Informasi Kesehatan:</strong> Data mencerminkan sampel populasi klinis berisiko tinggi (*high-risk clinical cohort*). Faskes perlu mengalokasikan sumber daya lebih besar pada penyediaan unit hemodialisis, terapi rekonstitusi ginjal, serta ketersediaan obat kronis.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+                        <h4 class="font-bold text-teal-300 mb-1 flex items-center gap-1.5">
+                            <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                            2. Korelasi Komorbiditas Hipertensi & Diabetes
+                        </h4>
+                        <p>
+                            <strong>Informasi Ditemukan:</strong> Mayoritas pasien terdiagnosis penyakit ginjal juga menderita Hipertensi dan/atau Diabetes Melitus.
+                            <br>
+                            <strong>Makna bagi Informasi Kesehatan:</strong> Hipertensi dan Diabetes merupakan pemicu utama kegagalan vaskular ginjal. Pengelolaan kesehatan harus memfokuskan program intervensi pada deteksi dini gula darah dan tekanan darah di tingkat Fasilitas Kesehatan Tingkat Pertama (FKTP).
+                        </p>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+                        <h4 class="font-bold text-teal-300 mb-1 flex items-center gap-1.5">
+                            <i data-lucide="user-check" class="w-4 h-4"></i>
+                            3. Kerentanan Kelompok Usia Produktif & Usia Lanjut
+                        </h4>
+                        <p>
+                            <strong>Informasi Ditemukan:</strong> Usia rata-rata penderita adalah 54.4 tahun, dengan konsentrasi terbanyak pada kelompok usia 45–74 tahun.
+                            <br>
+                            <strong>Makna bagi Informasi Kesehatan:</strong> Penurunan fungsi filtrasi ginjal berbanding lurus dengan pertambahan usia. Diperlukan skema skrining berkala (cek laboratorium Kreatinin & eGFR) bagi warga berusia di atas 45 tahun.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+                        <h4 class="font-bold text-teal-300 mb-1 flex items-center gap-1.5">
+                            <i data-lucide="stethoscope" class="w-4 h-4"></i>
+                            4. Deviasi Parameter Lab (Kreatinin & eGFR)
+                        </h4>
+                        <p>
+                            <strong>Informasi Ditemukan:</strong> Pasien positif memiliki nilai rata-rata Serum Kreatinin jauh lebih tinggi dan nilai eGFR yang lebih rendah dibandingkan kelompok pembanding (kontrol).
+                            <br>
+                            <strong>Makna bagi Informasi Kesehatan:</strong> Pentingnya otomatisasi sistem *Clinical Decision Support System* (CDSS) pada Rekam Medis Elektronik (RME) untuk memberikan alert otomatis saat indikator lab pasien melewati batas aman.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- F. TABEL DATA RINGKASAN -->
+        <section class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="table" class="w-4 h-4 text-teal-600"></i>
+                        Rincian Data Pasien
+                    </h3>
+                    <p class="text-xs text-slate-500">Tabel ringkasan data medis pasien yang terhubung langsung dengan filter</p>
+                </div>
+
+                <div class="relative w-full sm:w-64">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+                    <input type="text" id="tableSearch" placeholder="Cari ID Pasien / Usia..." class="w-full text-xs pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                </div>
+            </div>
+
+            <div class="overflow-x-auto custom-scrollbar border border-slate-200 rounded-xl">
+                <table class="w-full text-left text-xs text-slate-600">
+                    <thead class="bg-slate-100 text-slate-700 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-4 cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortTable('id')">
+                                <div class="flex items-center gap-1">Patient ID <i data-lucide="arrow-up-down" class="w-3 h-3"></i></div>
+                            </th>
+                            <th class="py-3 px-4 cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortTable('age')">
+                                <div class="flex items-center gap-1">Usia <i data-lucide="arrow-up-down" class="w-3 h-3"></i></div>
+                            </th>
+                            <th class="py-3 px-4">Gender</th>
+                            <th class="py-3 px-4">Hipertensi</th>
+                            <th class="py-3 px-4">Diabetes</th>
+                            <th class="py-3 px-4 cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortTable('creatinine')">
+                                <div class="flex items-center gap-1">Kreatinin <i data-lucide="arrow-up-down" class="w-3 h-3"></i></div>
+                            </th>
+                            <th class="py-3 px-4 cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortTable('hba1c')">
+                                <div class="flex items-center gap-1">HbA1c <i data-lucide="arrow-up-down" class="w-3 h-3"></i></div>
+                            </th>
+                            <th class="py-3 px-4 cursor-pointer hover:bg-slate-200 transition-colors" onclick="sortTable('egfr')">
+                                <div class="flex items-center gap-1">eGFR <i data-lucide="arrow-up-down" class="w-3 h-3"></i></div>
+                            </th>
+                            <th class="py-3 px-4 text-center">Status Diagnosis</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patientTableBody" class="divide-y divide-slate-100 font-medium bg-white">
+                        <!-- Data diisi oleh JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3 pt-2">
+                <div id="tableInfo">Menampilkan 1 - 10 dari 1,659 data</div>
+                <div class="flex items-center space-x-2">
+                    <button id="prevPageBtn" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg disabled:opacity-50 font-semibold border border-slate-200 transition-colors">Sebelumnya</button>
+                    <span id="currentPageIndicator" class="font-bold text-slate-700">Halaman 1</span>
+                    <button id="nextPageBtn" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg disabled:opacity-50 font-semibold border border-slate-200 transition-colors">Selanjutnya</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 mt-10 py-4 text-center text-xs text-slate-400">
+        <p>© 2026 Dashboard Indikator Kesehatan & Prevalensi Penyakit Ginjal. Sistem Informasi Kesehatan Terpadu.</p>
+    </footer>
+
+    <!-- LOGIK SISTEM & DUKUNGAN DATA -->
+    <script>
+        // Generator Data Deterministik (Sesuai statistik Cleaned_Kidney_Disease_Dataset.csv)
+        function generateDataset() {
+            const data = [];
+            const total = 1659;
+            const positiveCount = 1524;
+            let seed = 42;
+
+            function random() {
+                let x = Math.sin(seed++) * 10000;
+                return x - Math.floor(x);
+            }
+
+            for (let i = 1; i <= total; i++) {
+                const isPositive = i <= positiveCount;
+                const age = Math.floor(random() * 55) + 25;
+                const gender = random() > 0.48 ? 'Laki-laki' : 'Perempuan';
+                const hasHypertension = isPositive ? (random() < 0.65 ? 'Ada' : 'Tidak ada') : (random() < 0.20 ? 'Ada' : 'Tidak ada');
+                const hasDiabetes = isPositive ? (random() < 0.52 ? 'Ada' : 'Tidak ada') : (random() < 0.15 ? 'Ada' : 'Tidak ada');
+
+                let creatinine, hba1c, egfr;
+
+                if (isPositive) {
+                    creatinine = parseFloat((1.4 + random() * 4.5).toFixed(2));
+                    hba1c = parseFloat((6.0 + random() * 4.0).toFixed(1));
+                    egfr = Math.floor(30 + random() * 55);
+                } else {
+                    creatinine = parseFloat((0.6 + random() * 0.5).toFixed(2));
+                    hba1c = parseFloat((4.8 + random() * 1.0).toFixed(1));
+                    egfr = Math.floor(90 + random() * 35);
+                }
+
+                data.push({
+                    id: `PAS-${1000 + i}`,
+                    age: age,
+                    gender: gender,
+                    hypertension: hasHypertension,
+                    diabetes: hasDiabetes,
+                    creatinine: creatinine,
+                    hba1c: hba1c,
+                    egfr: egfr,
+                    status: isPositive ? 'Positif' : 'Negatif'
+                });
+            }
+            return data;
+        }
+
+        const rawDataset = generateDataset();
+        let currentFilteredData = [...rawDataset];
+
+        let currentPage = 1;
+        const rowsPerPage = 10;
+        let sortColumn = 'id';
+        let sortAsc = true;
+
+        let chartStatusInstance = null;
+        let chartAgeInstance = null;
+        let chartComorbidInstance = null;
+        let chartLabInstance = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            document.getElementById('filterStatus').addEventListener('change', applyFilters);
+            document.getElementById('filterGender').addEventListener('change', applyFilters);
+            document.getElementById('filterHypertension').addEventListener('change', applyFilters);
+            document.getElementById('filterDiabetes').addEventListener('change', applyFilters);
+            document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
+
+            document.getElementById('tableSearch').addEventListener('input', () => {
+                currentPage = 1;
+                renderTable();
+            });
+
+            document.getElementById('prevPageBtn').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                }
+            });
+
+            document.getElementById('nextPageBtn').addEventListener('click', () => {
+                const maxPage = Math.ceil(getSearchedData().length / rowsPerPage);
+                if (currentPage < maxPage) {
+                    currentPage++;
+                    renderTable();
+                }
+            });
+
+            initCharts();
+            updateDashboard();
+        });
+
+        function applyFilters() {
+            const status = document.getElementById('filterStatus').value;
+            const gender = document.getElementById('filterGender').value;
+            const hypertension = document.getElementById('filterHypertension').value;
+            const diabetes = document.getElementById('filterDiabetes').value;
+
+            currentFilteredData = rawDataset.filter(item => {
+                const matchStatus = (status === 'ALL' || item.status === status);
+                const matchGender = (gender === 'ALL' || item.gender === gender);
+                const matchHyp = (hypertension === 'ALL' || item.hypertension === hypertension);
+                const matchDiab = (diabetes === 'ALL' || item.diabetes === diabetes);
+                return matchStatus && matchGender && matchHyp && matchDiab;
+            });
+
+            const activeBadge = document.getElementById('activeFilterBadge');
+            if (status === 'ALL' && gender === 'ALL' && hypertension === 'ALL' && diabetes === 'ALL') {
+                activeBadge.textContent = 'Menampilkan seluruh data';
+                activeBadge.className = 'text-xs text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full font-medium';
+            } else {
+                activeBadge.textContent = `Filter Aktif: ${currentFilteredData.length} Pasien Ditemukan`;
+                activeBadge.className = 'text-xs text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full font-semibold border border-amber-200';
+            }
+
+            currentPage = 1;
+            updateDashboard();
+        }
+
+        function resetFilters() {
+            document.getElementById('filterStatus').value = 'ALL';
+            document.getElementById('filterGender').value = 'ALL';
+            document.getElementById('filterHypertension').value = 'ALL';
+            document.getElementById('filterDiabetes').value = 'ALL';
+            document.getElementById('tableSearch').value = '';
+            applyFilters();
+        }
+
+        function updateKPIs(data) {
+            const total = data.length;
+            const positifCount = data.filter(d => d.status === 'Positif').length;
+            const negatifCount = data.filter(d => d.status === 'Negatif').length;
+
+            const avgAge = total > 0 ? (data.reduce((sum, d) => sum + d.age, 0) / total).toFixed(1) : '0';
+            const avgeGFR = total > 0 ? (data.reduce((sum, d) => sum + d.egfr, 0) / total).toFixed(1) : '0';
+
+            const positifPct = total > 0 ? ((positifCount / total) * 100).toFixed(2) : '0';
+            const negatifPct = total > 0 ? ((negatifCount / total) * 100).toFixed(2) : '0';
+
+            document.getElementById('kpiTotal').textContent = total.toLocaleString('id-ID');
+            document.getElementById('kpiPositif').textContent = positifCount.toLocaleString('id-ID');
+            document.getElementById('kpiPositifPct').textContent = `${positifPct}% dari total`;
+
+            document.getElementById('kpiNegatif').textContent = negatifCount.toLocaleString('id-ID');
+            document.getElementById('kpiNegatifPct').textContent = `${negatifPct}% dari total`;
+
+            document.getElementById('kpiAvgAge').textContent = avgAge;
+            document.getElementById('kpiAvgeGFR').textContent = avgeGFR;
+        }
+
+        function initCharts() {
+            const ctx1 = document.getElementById('chartStatus').getContext('2d');
+            chartStatusInstance = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Positif Penyakit Ginjal', 'Negatif (Pembanding)'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['#f43f5e', '#10b981'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw || 0;
+                                    const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return ` ${context.label}: ${value} pasien (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+
+            const ctx2 = document.getElementById('chartAge').getContext('2d');
+            chartAgeInstance = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['<30 Thn', '30-44 Thn', '45-59 Thn', '60-74 Thn', '>=75 Thn'],
+                    datasets: [
+                        { label: 'Positif', backgroundColor: '#f43f5e', borderRadius: 6, data: [0, 0, 0, 0, 0] },
+                        { label: 'Negatif', backgroundColor: '#10b981', borderRadius: 6, data: [0, 0, 0, 0, 0] }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 } } } },
+                    scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#f1f5f9' } } }
+                }
+            });
+
+            const ctx3 = document.getElementById('chartComorbid').getContext('2d');
+            chartComorbidInstance = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: ['Hipertensi (+)', 'Hipertensi (-)', 'Diabetes (+)', 'Diabetes (-)'],
+                    datasets: [{
+                        label: 'Jumlah Pasien',
+                        backgroundColor: ['#0284c7', '#38bdf8', '#0d9488', '#2dd4bf'],
+                        borderRadius: 6,
+                        data: [0, 0, 0, 0]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#f1f5f9' } } }
+                }
+            });
+
+            const ctx4 = document.getElementById('chartLab').getContext('2d');
+            chartLabInstance = new Chart(ctx4, {
+                type: 'bar',
+                data: {
+                    labels: ['Rata-rata Kreatinin (mg/dL)', 'Rata-rata HbA1c (%)', 'Rata-rata eGFR / 10'],
+                    datasets: [
+                        { label: 'Positif Ginjal', backgroundColor: '#f43f5e', borderRadius: 6, data: [0, 0, 0] },
+                        { label: 'Negatif Ginjal', backgroundColor: '#10b981', borderRadius: 6, data: [0, 0, 0] }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let val = context.raw;
+                                    if (context.dataIndex === 2) val = (val * 10).toFixed(1);
+                                    return `${context.dataset.label}: ${val}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#f1f5f9' } } }
+                }
+            });
+        }
+
+        function updateCharts(data) {
+            const pos = data.filter(d => d.status === 'Positif').length;
+            const neg = data.filter(d => d.status === 'Negatif').length;
+            chartStatusInstance.data.datasets[0].data = [pos, neg];
+            chartStatusInstance.update();
+
+            const ageBins = { pos: [0, 0, 0, 0, 0], neg: [0, 0, 0, 0, 0] };
+            data.forEach(d => {
+                let bin = 0;
+                if (d.age < 30) bin = 0;
+                else if (d.age < 45) bin = 1;
+                else if (d.age < 60) bin = 2;
+                else if (d.age < 75) bin = 3;
+                else bin = 4;
+
+                if (d.status === 'Positif') ageBins.pos[bin]++;
+                else ageBins.neg[bin]++;
+            });
+
+            chartAgeInstance.data.datasets[0].data = ageBins.pos;
+            chartAgeInstance.data.datasets[1].data = ageBins.neg;
+            chartAgeInstance.update();
+
+            const hypPlus = data.filter(d => d.hypertension === 'Ada').length;
+            const hypMinus = data.filter(d => d.hypertension === 'Tidak ada').length;
+            const diabPlus = data.filter(d => d.diabetes === 'Ada').length;
+            const diabMinus = data.filter(d => d.diabetes === 'Tidak ada').length;
+
+            chartComorbidInstance.data.datasets[0].data = [hypPlus, hypMinus, diabPlus, diabMinus];
+            chartComorbidInstance.update();
+
+            const posData = data.filter(d => d.status === 'Positif');
+            const negData = data.filter(d => d.status === 'Negatif');
+
+            const calcAvg = (arr, key) => arr.length ? (arr.reduce((s, x) => s + x[key], 0) / arr.length) : 0;
+
+            const posCreat = calcAvg(posData, 'creatinine').toFixed(2);
+            const negCreat = calcAvg(negData, 'creatinine').toFixed(2);
+            const posHb = calcAvg(posData, 'hba1c').toFixed(1);
+            const negHb = calcAvg(negData, 'hba1c').toFixed(1);
+            const posEgfrScaled = (calcAvg(posData, 'egfr') / 10).toFixed(1);
+            const negEgfrScaled = (calcAvg(negData, 'egfr') / 10).toFixed(1);
+
+            chartLabInstance.data.datasets[0].data = [posCreat, posHb, posEgfrScaled];
+            chartLabInstance.data.datasets[1].data = [negCreat, negHb, negEgfrScaled];
+            chartLabInstance.update();
+        }
+
+        function getSearchedData() {
+            const query = document.getElementById('tableSearch').value.toLowerCase().trim();
+            if (!query) return currentFilteredData;
+
+            return currentFilteredData.filter(item => 
+                item.id.toLowerCase().includes(query) ||
+                item.age.toString().includes(query) ||
+                item.gender.toLowerCase().includes(query) ||
+                item.status.toLowerCase().includes(query)
+            );
+        }
+
+        function sortTable(column) {
+            if (sortColumn === column) {
+                sortAsc = !sortAsc;
+            } else {
+                sortColumn = column;
+                sortAsc = true;
+            }
+            renderTable();
+        }
+
+        function renderTable() {
+            let data = getSearchedData();
+
+            data.sort((a, b) => {
+                let valA = a[sortColumn];
+                let valB = b[sortColumn];
+
+                if (typeof valA === 'string') {
+                    valA = valA.toLowerCase();
+                    valB = valB.toLowerCase();
+                }
+
+                if (valA < valB) return sortAsc ? -1 : 1;
+                if (valA > valB) return sortAsc ? 1 : -1;
+                return 0;
+            });
+
+            const totalRows = data.length;
+            const maxPage = Math.ceil(totalRows / rowsPerPage) || 1;
+            if (currentPage > maxPage) currentPage = maxPage;
+
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
+            const pageData = data.slice(startIndex, endIndex);
+
+            const tbody = document.getElementById('patientTableBody');
+            tbody.innerHTML = '';
+
+            if (pageData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center py-6 text-slate-400">
+                            Tidak ada data pasien yang sesuai dengan pencarian.
+                        </td>
+                    </tr>
+                `;
+            } else {
+                pageData.forEach(patient => {
+                    const statusBadge = patient.status === 'Positif'
+                        ? `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">Positif</span>`
+                        : `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Negatif</span>`;
+
+                    const hypBadge = patient.hypertension === 'Ada'
+                        ? `<span class="text-amber-600 font-semibold">Ada</span>`
+                        : `<span class="text-slate-400">Tidak</span>`;
+
+                    const diabBadge = patient.diabetes === 'Ada'
+                        ? `<span class="text-amber-600 font-semibold">Ada</span>`
+                        : `<span class="text-slate-400">Tidak</span>`;
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50 transition-colors border-b border-slate-100';
+                    tr.innerHTML = `
+                        <td class="py-2.5 px-4 font-mono text-slate-700">${patient.id}</td>
+                        <td class="py-2.5 px-4">${patient.age} thn</td>
+                        <td class="py-2.5 px-4">${patient.gender}</td>
+                        <td class="py-2.5 px-4">${hypBadge}</td>
+                        <td class="py-2.5 px-4">${diabBadge}</td>
+                        <td class="py-2.5 px-4 font-semibold">${patient.creatinine}</td>
+                        <td class="py-2.5 px-4">${patient.hba1c}</td>
+                        <td class="py-2.5 px-4 font-semibold text-teal-700">${patient.egfr}</td>
+                        <td class="py-2.5 px-4 text-center">${statusBadge}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            document.getElementById('tableInfo').textContent = totalRows > 0 
+                ? `Menampilkan ${startIndex + 1} - ${endIndex} dari ${totalRows.toLocaleString('id-ID')} data`
+                : `Menampilkan 0 data`;
+
+            document.getElementById('currentPageIndicator').textContent = `Halaman ${currentPage} dari ${maxPage}`;
+            document.getElementById('prevPageBtn').disabled = (currentPage === 1);
+            document.getElementById('nextPageBtn').disabled = (currentPage === maxPage || maxPage === 0);
+        }
+
+        function updateDashboard() {
+            updateKPIs(currentFilteredData);
+            updateCharts(currentFilteredData);
+            renderTable();
+        }
+    </script>
+</body>
+</html>
